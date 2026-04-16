@@ -1,0 +1,27 @@
+# Java
+target/
+*.class
+*.log
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python / ComfyUI (IMPORTANT)
+venv/
+ComfyUI-master/
+models/
+*.safetensors
+
+# Env
+.env
