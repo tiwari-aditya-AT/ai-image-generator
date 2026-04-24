@@ -1,9 +1,17 @@
 package image.gen.image.controller;
 
 import image.gen.image.service.ComfyUIService;
+import image.gen.image.service.OllamaService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.client.RestTemplate;
+import java.util.Base64;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -11,16 +19,27 @@ import java.util.Map;
 @CrossOrigin(origins = "*") // allow frontend (optional)
 public class AIController {
 
+    @Autowired
+    private OllamaService ollamaService;
+
     private final ComfyUIService comfyUIService;
 
     public AIController(ComfyUIService comfyUIService) {
         this.comfyUIService = comfyUIService;
     }
+    @PostMapping("/image-to-text")
+    public String imageToText(@RequestBody Map<String, String> request) throws Exception {
+
+        String prompt = request.get("prompt");
+        String imagePath = request.get("imagePath");
+
+        return ollamaService.imageToText(prompt, imagePath);
+    }
 
     @PostMapping("/text-to-image")
     public ResponseEntity<?> generate(@RequestBody Map<String, String> body) {
         try {
-            // 1. Get prompt
+
             String prompt = body.get("prompt");
 
             if (prompt == null || prompt.isEmpty()) {
@@ -28,11 +47,8 @@ public class AIController {
                         Map.of("error", "Prompt is required")
                 );
             }
-
-            // 2. Generate image via ComfyUI
             String imageUrl = comfyUIService.generateImage(prompt);
 
-            // 3. Return response
             return ResponseEntity.ok(Map.of(
                     "status", "success",
                     "prompt", prompt,
@@ -50,4 +66,63 @@ public class AIController {
             );
         }
     }
+    @PostMapping("/imagetext-to-text")
+    public ResponseEntity<?> imagetextToText(@RequestBody Map<String, String> body) {
+        try {
+            String imagePath = body.get("imagePath");
+
+            if (imagePath == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "imagePath required"));
+            }
+
+            String result = describeImage(imagePath);
+
+            return ResponseEntity.ok(Map.of("description", result));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    private String describeImage(String imagePath) throws Exception {
+
+        RestTemplate restTemplate = new RestTemplate();
+
+        // convert image → base64
+        byte[] imageBytes = Files.readAllBytes(Paths.get(imagePath));
+        String base64Image = Base64.getEncoder().encodeToString(imageBytes);
+
+        Map<String, Object> request = new HashMap<>();
+        request.put("model", "llava");
+        request.put("prompt", "Describe this image in detail");
+        request.put("images", List.of(base64Image));
+        request.put("stream", false);
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                "http://localhost:11434/api/generate",
+                request,
+                Map.class
+        );
+
+        return response.getBody().get("response").toString();
+    }
+
+
+    @PostMapping("/image-to-image")
+    public ResponseEntity<?> imageToImage(@RequestBody Map<String, String> body) {
+        try {
+            String prompt = body.get("prompt");
+            String imagePath = body.get("imagePath");
+
+            String result = comfyUIService.imageToImage(prompt, imagePath);
+
+            return ResponseEntity.ok(Map.of("imageUrl", result));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", e.getMessage()));
+        }
+
+
+    }
+
 }
