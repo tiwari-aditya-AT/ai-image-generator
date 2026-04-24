@@ -10,6 +10,6 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "ai")
 public class AppConfig {
 
-    private String ollamaUrl = "http://localhost:11434/api/generate";
-    private String sdUrl = "http://127.0.0.1:7860/sdapi/v1/txt2img";
+    private String ollamaUrl;
+    private String comfyUrl;
 }

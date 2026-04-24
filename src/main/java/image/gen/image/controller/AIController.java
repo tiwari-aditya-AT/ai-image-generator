@@ -1,5 +1,6 @@
 package image.gen.image.controller;
 
+import image.gen.image.config.AppConfig;
 import image.gen.image.service.ComfyUIService;
 import image.gen.image.service.OllamaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ import java.util.Map;
 public class AIController {
 
     @Autowired
+    private AppConfig config;
+
+    @Autowired
     private OllamaService ollamaService;
 
     private final ComfyUIService comfyUIService;
@@ -32,21 +36,25 @@ public class AIController {
 
         String prompt = request.get("prompt");
         String imagePath = request.get("imagePath");
-
-        return ollamaService.imageToText(prompt, imagePath);
+        try {
+            return ollamaService.imageToText(prompt, imagePath);
+        } catch (Exception e) {
+            return "Fallback: LLM not available";
+        }
     }
 
     @PostMapping("/text-to-image")
     public ResponseEntity<?> generate(@RequestBody Map<String, String> body) {
+
+        String prompt = body.get("prompt");
+
+        if (prompt == null || prompt.isEmpty()) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", "Prompt is required")
+            );
+        }
+
         try {
-
-            String prompt = body.get("prompt");
-
-            if (prompt == null || prompt.isEmpty()) {
-                return ResponseEntity.badRequest().body(
-                        Map.of("error", "Prompt is required")
-                );
-            }
             String imageUrl = comfyUIService.generateImage(prompt);
 
             return ResponseEntity.ok(Map.of(
@@ -56,16 +64,16 @@ public class AIController {
             ));
 
         } catch (Exception e) {
-            e.printStackTrace(); // debug in console
 
-            return ResponseEntity.status(500).body(
-                    Map.of(
-                            "status", "error",
-                            "message", e.getMessage()
-                    )
-            );
+            return ResponseEntity.ok(Map.of(
+                    "status", "fallback",
+                    "message", "Local GPU not available",
+                    "prompt", prompt
+            ));
         }
     }
+
+
     @PostMapping("/imagetext-to-text")
     public ResponseEntity<?> imagetextToText(@RequestBody Map<String, String> body) {
         try {
@@ -99,7 +107,7 @@ public class AIController {
         request.put("stream", false);
 
         ResponseEntity<Map> response = restTemplate.postForEntity(
-                "http://localhost:11434/api/generate",
+                config.getOllamaUrl(),
                 request,
                 Map.class
         );

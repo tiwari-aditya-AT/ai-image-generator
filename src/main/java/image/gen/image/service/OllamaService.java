@@ -1,6 +1,8 @@
 package image.gen.image.service;
 
 
+import image.gen.image.config.AppConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -10,6 +12,9 @@ import java.util.Map;
 
 @Service
 public class OllamaService {
+
+    @Autowired
+    private AppConfig config;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -27,7 +32,7 @@ public class OllamaService {
 
         // CALL OLLAMA
         Map response = restTemplate.postForObject(
-                "http://localhost:11434/api/generate",
+                config.getOllamaUrl(),
                 request,
                 Map.class
         );

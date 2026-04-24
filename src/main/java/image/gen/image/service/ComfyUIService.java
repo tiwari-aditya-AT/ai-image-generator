@@ -2,6 +2,9 @@ package image.gen.image.service;
 
 import java.nio.file.*;
 import java.util.List;
+
+import image.gen.image.config.AppConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -9,6 +12,9 @@ import java.util.*;
 
 @Service
 public class ComfyUIService {
+
+    @Autowired
+    private AppConfig config;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -37,7 +43,7 @@ public class ComfyUIService {
             Thread.sleep(1000);
 
             Map history = restTemplate.getForObject(
-                    "http://127.0.0.1:8188/history/" + promptId,
+                    config.getComfyUrl()+"/history/" + promptId,
                     Map.class
             );
 
@@ -66,7 +72,7 @@ public class ComfyUIService {
                     Map image = (Map) images.get(0);
                     String filename = (String) image.get("filename");
 
-                    return "http://127.0.0.1:8188/view?filename=" + filename;
+                    return config.getComfyUrl() + "/view?filename=" + filename;
                 }
             }
         }
