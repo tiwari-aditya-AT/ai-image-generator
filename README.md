@@ -190,12 +190,6 @@ http://localhost:8080/swagger-ui/index.html
 ---
 
 ## Future Enhancements
-
-- User Authentication
-- JWT Security
-- PostgreSQL Database
-- Image History
-- Credit System
 - Cloud Storage
 - AI Image Editing
 - Image Upscaling
